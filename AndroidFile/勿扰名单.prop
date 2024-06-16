@@ -1,0 +1,4 @@
+# 勿扰名单里的应用在前台时，不会启动应用(勿扰，类似游戏模式)，例如 com.tencent.tmgp.sgame
+com.tencent.tmgp.sgame
+com.tencent.jkchess
+com.eg.android.AlipayGphone
