@@ -81,13 +81,19 @@ if [[ "$result" == "" ]]; then
           continue
         fi
         start_app "$cron_config_pkg"
+        # 如果有单独设置杀进程时间，则使用单独设置的时间，否则使用全局配置
+        if [[ -n $(eval "echo \$cron_config_kill_time$i") ]]; then
+          after_x_seconds_to_kill=$(eval "echo \$cron_config_kill_time$i")
+        else
+          after_x_seconds_to_kill=$after_x_seconds_to_kill
+        fi
         nohup sh $MODDIR/stop_app.sh "$cron_config_pkg" $after_x_seconds_to_kill > /dev/null 2>&1 &
       else
         break
       fi
     done
   else
-    # 如果传入了参数，则只启动指定应用
+    # 如果传入了参数，则只启动指定应用，args: pkg no_start kill_time
     if [[ "$Screen_status" != "true" && "$2" == "true" ]]; then
       echo "$(date '+%F %T') | 亮屏时不启动 $arg_pkg" >> $start_apps_log
     else
@@ -95,6 +101,10 @@ if [[ "$result" == "" ]]; then
       if [[ "$not_kill_time_left" -le "$hh" && "$hh" -le "$not_kill_time_right" ]]; then
         echo "$(date '+%F %T') | 在 $not_kill_time_left 到 $not_kill_time_right 之间，不杀进程" >> $start_apps_log
       else
+        # 如果有单独设置杀进程时间，则使用单独设置的时间，否则使用全局配置
+        if [[ -n "$3" ]]; then
+          after_x_seconds_to_kill=$3
+        fi
         nohup sh $MODDIR/stop_app.sh "$arg_pkg" $after_x_seconds_to_kill > /dev/null 2>&1 &
       fi
     fi

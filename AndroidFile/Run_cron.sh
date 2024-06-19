@@ -49,8 +49,9 @@ for i in $(seq 1 $cron_count); do
     eval "cron_config_pkg=\$cron_config_pkg$i"
     eval "cron_config_rule=\$cron_config_rule$i"
     [[ -n $(eval "echo \$cron_config_screen_on_no_start$i") ]] && no_start="true" || no_start="false"
+    [[ -n $(eval "echo \$cron_config_kill_time$i") ]] && kill_time=$(eval "echo \$cron_config_kill_time$i") || kill_time=$after_x_seconds_to_kill
     echo "- 定时设置 | $cron_config_pkg | $cron_config_rule"
-    echo "$cron_config_rule $mod_path/script/run_apps.sh '$cron_config_pkg' '$no_start'" >> $cron_d_path/root
+    echo "$cron_config_rule $mod_path/script/run_apps.sh '$cron_config_pkg' '$no_start' $kill_time" >> $cron_d_path/root
   else
     break
   fi

@@ -25,6 +25,8 @@ cron_config_pkg0="xxxx"
 cron_config_rule0="0 */1 * * *"
 # 如果需要亮屏时不启动应用，可以在对应的配置后面添加 cron_config_screen_on_no_startX=true
 cron_config_screen_on_no_start0=true
+# 为当前配置项单独设置杀进程时间，单位秒，不设置则使用全局配置
+cron_config_kill_time0=60
 
 
 # 下面两个是支付宝的例子，可以根据自己的需求添加或删除
