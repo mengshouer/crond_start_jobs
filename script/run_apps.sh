@@ -75,14 +75,12 @@ if [[ "$result" == "" ]]; then
     for i in $(seq 1 $cron_count); do
       if [[ -n $(eval "echo \$cron_config_pkg$i") ]]; then
         eval "cron_config_pkg=\$cron_config_pkg$i"
+        [[ -n $(eval "echo \$cron_config_screen_on_no_start$i") ]] && no_start="true" || no_start="false"
+        # 检查是否配置了亮屏时不启动应用
+        if [[ "$Screen_status" != "true" && "$no_start" == "true" ]]; then
+          continue
+        fi
         start_app "$cron_config_pkg"
-      else
-        break
-      fi
-    done
-    for i in $(seq 1 $cron_count); do
-      if [[ -n $(eval "echo \$cron_config_pkg$i") ]]; then
-        eval "cron_config_pkg=\$cron_config_pkg$i"
         nohup sh $MODDIR/stop_app.sh "$cron_config_pkg" $after_x_seconds_to_kill > /dev/null 2>&1 &
       else
         break
@@ -90,13 +88,17 @@ if [[ "$result" == "" ]]; then
     done
   else
     # 如果传入了参数，则只启动指定应用
-    start_app $arg_pkg
-    if [[ "$not_kill_time_left" -le "$hh" && "$hh" -le "$not_kill_time_right" ]]; then
-      echo "$(date '+%F %T') | 在 $not_kill_time_left 到 $not_kill_time_right 之间，不杀进程" >> $start_apps_log
+    if [[ "$Screen_status" != "true" && "$2" == "true" ]]; then
+      echo "$(date '+%F %T') | 亮屏时不启动 $arg_pkg" >> $start_apps_log
     else
-      nohup sh $MODDIR/stop_app.sh "$arg_pkg" $after_x_seconds_to_kill > /dev/null 2>&1 &
+      start_app $arg_pkg
+      if [[ "$not_kill_time_left" -le "$hh" && "$hh" -le "$not_kill_time_right" ]]; then
+        echo "$(date '+%F %T') | 在 $not_kill_time_left 到 $not_kill_time_right 之间，不杀进程" >> $start_apps_log
+      else
+        nohup sh $MODDIR/stop_app.sh "$arg_pkg" $after_x_seconds_to_kill > /dev/null 2>&1 &
+      fi
     fi
   fi
 else
-    echo "$(date '+%F %T') | 什么也不做" >> $start_apps_log
+    echo "$(date '+%F %T') | $result 什么也不做" >> $start_apps_log
 fi

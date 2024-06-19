@@ -27,3 +27,7 @@ cron_config_rule1="0 */1 * * *"
 cron_config_pkg2="--user 999 com.eg.android.AlipayGphone/com.alipay.mobile.framework.service.common.SchemeStartActivity"
 cron_config_rule2="0 */1 * * *"
 
+cron_config_pkg3="xxxx"
+cron_config_rule3="0 */1 * * *"
+# 如果需要亮屏时不启动应用，可以在对应的配置后面添加 cron_config_screen_on_no_startX=true
+cron_config_screen_on_no_start3=true
