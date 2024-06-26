@@ -56,6 +56,7 @@ for i in $(seq 1 $cron_count); do
     break
   fi
 done
+cp -f $cron_d_path/root $set_path/crontab-bak
 crond -c "$cron_d_path"
 start_apps_crond_pid_2="$(ps -ef | grep -v 'grep' | grep 'crond' | grep 'crond_start_apps' | awk '{print $2}')"
 echo "- 定时启动成功 | pid: $start_apps_crond_pid_2"
