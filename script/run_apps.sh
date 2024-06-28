@@ -12,9 +12,6 @@ fi
 echo lock_me > /sys/power/wake_unlock
 #开始启动
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> $start_apps_log
-#获取前台应用包名
-pkg=`dumpsys window | grep mTopFullscreenOpaqueWindowState | sed 's/ /\n/g' | tail -n 1 | sed 's/\/.*$//g'`
-echo "$(date '+%F %T') | 前台应用包名为 $pkg" >> $start_apps_log
 
 if [[ -f $crond_rule_list ]]; then
   . "$crond_rule_list"
@@ -24,24 +21,6 @@ fi
 
 #获取当前时间，格式是时分，例如当前是上午8：50，hh=850
 hh=`date '+%H%M'`
-
-worklist=$(cat "$White_List" | grep -v '^#' | cut -f2 -d '=')
-#echo "$(date '+%F %T') | 勿扰应用包名为 $worklist" >> $start_apps_log
-
-#pkgs内的应用在前台时，不会启动支付宝任务(类似于游戏模式)
-#pkgs=(
-#com.eg.android.AlipayGphone
-#com.tencent.tmgp.sgame
-#com.tencent.jkchess
-#)
-#检测屏幕状态
-Screen_status="$(dumpsys window policy | grep 'mInputRestricted' | cut -d= -f2)"
-if [[ "$Screen_status" != "true" ]]; then
-  #判断前台应用是否属于pkgs内的应用
-  result=$(echo $worklist | grep "${pkg}")
-else
-  result=""
-fi
 
 arg_pkg=$1
 isDual=""
@@ -68,6 +47,28 @@ start_app() {
     sleep 1
   fi
 }
+
+#获取前台应用包名
+front_pkg=`dumpsys window | grep mTopFullscreenOpaqueWindowState | sed 's/ /\n/g' | tail -n 1 | sed 's/\/.*$//g'`
+echo "$(date '+%F %T') | 前台应用包名为 $front_pkg" >> $start_apps_log
+
+worklist=$(cat "$White_List" | grep -v '^#' | cut -f2 -d '=')
+#echo "$(date '+%F %T') | 勿扰应用包名为 $worklist" >> $start_apps_log
+
+#pkgs内的应用在前台时，不会启动支付宝任务(类似于游戏模式)
+#pkgs=(
+#com.eg.android.AlipayGphone
+#com.tencent.tmgp.sgame
+#com.tencent.jkchess
+#)
+#检测屏幕状态
+Screen_status="$(dumpsys window policy | grep 'mInputRestricted' | cut -d= -f2)"
+if [[ "$Screen_status" != "true" ]]; then
+  #判断前台应用是否属于 勿扰应用包 内的应用，或者为 arg_pkg 指定的应用
+  result=$(echo $worklist | grep "${front_pkg}") || result=$(echo $arg_pkg | grep "${front_pkg}")
+else
+  result=""
+fi
 
 if [[ "$result" == "" ]]; then
   if [[ $arg_pkg == "" ]]; then
