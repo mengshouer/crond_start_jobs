@@ -20,12 +20,15 @@ if [[ "$after_x_seconds_to_kill" == "" ]]; then
   after_x_seconds_to_kill=0
 fi
 
-
-sleep $after_x_seconds_to_kill
-
-echo "$(date '+%F %T') | 关闭$isDual $user_id $app_name" >> $start_apps_log
-if [[ "$isDual" == "" ]]; then
-  am force-stop $app_name
+# 如果 after_x_seconds_to_kill 不为正数，则不杀进程
+if [[ $after_x_seconds_to_kill -gt 0 ]]; then
+  sleep $after_x_seconds_to_kill
+  echo "$(date '+%F %T') | 关闭$isDual $user_id $app_name" >> $start_apps_log
+  if [[ "$isDual" == "" ]]; then
+    am force-stop $app_name
+  else
+    am force-stop --user $user_id $app_name
+  fi
 else
-  am force-stop --user $user_id $app_name
+  echo "$(date '+%F %T') | kill时间不为正数，不关闭$isDual $user_id $app_name" >> $start_apps_log
 fi

@@ -4,7 +4,7 @@
 #-------------------------------------------------
 
 # 应用启动后过多久后杀进程，单位秒
-# after_x_seconds_to_kill=300 表示5分钟后杀进程
+# after_x_seconds_to_kill=300 表示5分钟后杀进程，设置为非正数则不杀进程
 after_x_seconds_to_kill=300
 
 # 配置一个时间段内启动应用时不杀进程 [not_kill_time_left, not_kill_time_right]
@@ -25,7 +25,7 @@ cron_config_pkg0="xxxx"
 cron_config_rule0="0 */1 * * *"
 # 如果需要亮屏时不启动应用，可以在对应的配置后面添加 cron_config_screen_on_no_startX=true
 cron_config_screen_on_no_start0=true
-# 为当前配置项单独设置杀进程时间，单位秒，不设置则使用全局配置
+# 为当前配置项单独设置杀进程时间，单位秒，不设置则使用全局配置，设置为非正数则不杀进程
 cron_config_kill_time0=60
 
 
