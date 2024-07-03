@@ -42,7 +42,10 @@ start_app() {
     app_name=$(echo $pkg | cut -d ' ' -f 3)
   fi
   if [[ ! "$pkg" == "" ]]; then
-    echo "$(date '+%F %T') | 启动$isDual $user_id $app_name" >> $start_apps_log
+    # 除去包名后面的启动类名
+    app_name=$(echo $app_name | cut -d '/' -f 1)
+    echo "$(date '+%F %T') | 启动$isDual $user_id $pkg" >> $start_apps_log
+    pm enable $app_name
     am start $pkg
     sleep 1
   fi
@@ -88,13 +91,14 @@ if [[ "$result" == "" ]]; then
         else
           after_x_seconds_to_kill=$after_x_seconds_to_kill
         fi
-        nohup sh $MODDIR/stop_app.sh "$cron_config_pkg" $after_x_seconds_to_kill > /dev/null 2>&1 &
+        disable_app=$(eval "echo \$cron_config_disable_app$i")
+        nohup sh $MODDIR/stop_app.sh "$cron_config_pkg" $after_x_seconds_to_kill $disable_app > /dev/null 2>&1 &
       else
         break
       fi
     done
   else
-    # 如果传入了参数，则只启动指定应用，args: pkg no_start kill_time
+    # 如果传入了参数，则只启动指定应用，args: pkg no_start kill_time disable_app
     if [[ "$Screen_status" != "true" && "$2" == "true" ]]; then
       echo "$(date '+%F %T') | 亮屏时不启动 $arg_pkg" >> $start_apps_log
     else
@@ -106,7 +110,8 @@ if [[ "$result" == "" ]]; then
         if [[ -n "$3" ]]; then
           after_x_seconds_to_kill=$3
         fi
-        nohup sh $MODDIR/stop_app.sh "$arg_pkg" $after_x_seconds_to_kill > /dev/null 2>&1 &
+        # disable_app=$4
+        nohup sh $MODDIR/stop_app.sh "$arg_pkg" $after_x_seconds_to_kill $4 > /dev/null 2>&1 &
       fi
     fi
   fi

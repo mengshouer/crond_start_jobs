@@ -3,6 +3,7 @@ start_apps_log=/sdcard/Android/start_apps/log.md
 
 arg_pkg=$1
 after_x_seconds_to_kill=$2
+disable_app=$3
 # 如果是 --user [id] 开头，则是多开应用
 if [[ "$arg_pkg" == "--user"* ]]; then
   isDual="多开应用"
@@ -23,7 +24,17 @@ fi
 # 如果 after_x_seconds_to_kill 不为正数，则不杀进程
 if [[ $after_x_seconds_to_kill -gt 0 ]]; then
   sleep $after_x_seconds_to_kill
-  echo "$(date '+%F %T') | 关闭$isDual $user_id $app_name" >> $start_apps_log
+  text="关闭"
+  if [[ "$disable_app" == "true" ]]; then
+    text="禁用"
+    if [[ "$isDual" == "" ]]; then
+      pm disable-user $app_name
+    else
+      pm disable-user --user $user_id $app_name
+    fi
+  fi
+
+  echo "$(date '+%F %T') | $text$isDual $user_id $app_name" >> $start_apps_log
   if [[ "$isDual" == "" ]]; then
     am force-stop $app_name
   else

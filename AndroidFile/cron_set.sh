@@ -27,6 +27,8 @@ cron_config_rule0="0 */1 * * *"
 cron_config_screen_on_no_start0=true
 # 为当前配置项单独设置杀进程时间，单位秒，不设置则使用全局配置，设置为非正数则不杀进程
 cron_config_kill_time0=60
+# 如果需要禁用应用则添加 cron_config_disable_app，设置值则为禁用应用，不设置则只杀进程
+cron_config_disable_app0=true
 
 
 # 下面两个是支付宝的例子，可以根据自己的需求添加或删除
