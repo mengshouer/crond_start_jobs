@@ -26,6 +26,7 @@ cron_set_dir="${start_apps_list_path}"
 #文件类型
 White_List="${start_apps_list_path}/勿扰名单.prop"
 cron_set_file="${cron_set_dir}/cron_set.sh"
+cron_set_example="${cron_set_dir}/cron_set_example.sh"
 Run_cron_sh="${cron_set_dir}/Run_cron.sh"
 
 magisk_util_functions="/data/adb/magisk/util_functions.sh"
@@ -59,6 +60,7 @@ fi
 [[ -d ${cron_set_dir} ]] || mkdir -p ${cron_set_dir}
 [[ -f ${White_List} ]] || cp -r "${MODPATH}"/AndroidFile/勿扰名单.prop ${start_apps_list_path}/
 [[ -f ${cron_set_file} ]] || cp -r "${MODPATH}"/AndroidFile/cron_set.sh ${cron_set_dir}/
-[[ -f ${Run_cron_sh} ]] && rm -rf ${Run_cron_sh}
-cp -r "${MODPATH}"/AndroidFile/Run_cron.sh ${cron_set_dir}/
+rm -f ${Run_cron_sh} ${cron_set_example}
+cp "${MODPATH}"/AndroidFile/Run_cron.sh ${cron_set_dir}/
+cp "${MODPATH}"/AndroidFile/cron_set.sh ${cron_set_example}
 rm -rf "${MODPATH}"/AndroidFile/
