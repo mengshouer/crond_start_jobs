@@ -1,6 +1,6 @@
 id=crond_start_apps
 name=自定义Cron启动应用
-version=v1.0.8
+version=v1.0.9
 versionCode=20240711
 author=mengshouer
 description=自定义Cron启动应用，配合某些软件使用

@@ -64,3 +64,4 @@ rm -f ${Run_cron_sh} ${cron_set_example}
 cp "${MODPATH}"/AndroidFile/Run_cron.sh ${cron_set_dir}/
 cp "${MODPATH}"/AndroidFile/cron_set.sh ${cron_set_example}
 rm -rf "${MODPATH}"/AndroidFile/
+rm -f "${MODPATH}"/CHANGELOG.md "${MODPATH}"/README.md "${MODPATH}"/LICENSE "${MODPATH}"/update.json "${MODPATH}"/customize.sh
