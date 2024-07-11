@@ -1,0 +1,62 @@
+name: Build and Release
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "module.prop"
+jobs:
+  build:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: mengshouer/crond_start_apps
+
+      - name: Set variables
+        run: |
+          echo "BUILDVERSION=$(grep -oP 'version=\K.*' ./module.prop)" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Move and zip files
+        run: |
+          mkdir -p ./publish/
+          zip -r publish/crond_start_apps.zip . -x .git/\* .github/\* publish LICENSE *\.md update.json
+
+      - name: Delete current release assets
+        uses: andreaswilli/delete-release-assets-action@v3.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.BUILDVERSION }}
+          deleteOnlyFromDrafts: false
+
+      - name: Create and Upload Release
+        id: upload_release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: ${{ env.BUILDVERSION }}
+          tag: ${{ env.BUILDVERSION }}
+          file_glob: true
+          overwrite: true
+          file: ./publish/*
+
+      - name: Git push assets to "release" branch
+        run: |
+          cd publish || exit 1
+          git init
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b release
+          git add .
+          git commit -m "Released on ${{ env.BUILDVERSION }}"
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u origin release
+
+      - name: Purge jsdelivr CDN
+        run: |
+          cd publish || exit 1
+          for file in $(ls); do
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file}"
+          done
