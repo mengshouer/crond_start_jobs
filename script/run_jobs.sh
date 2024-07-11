@@ -1,17 +1,17 @@
 MODDIR=${0%/*}
-start_apps_log=/sdcard/Android/start_apps/log.md
-White_List=/sdcard/Android/start_apps/勿扰名单.prop
-crond_rule_list=/sdcard/Android/start_apps/cron_set.sh
+start_jobs_log=/sdcard/Android/start_jobs/log.md
+White_List=/sdcard/Android/start_jobs/勿扰名单.prop
+crond_rule_list=/sdcard/Android/start_jobs/cron_set.sh
 #创建日志文件
-if [ ! -f $start_apps_log ]; then
-	mkdir /sdcard/Android/start_apps
-	touch $start_apps_log
-	echo "#如果有问题，请携带日志反馈" >$start_apps_log
+if [ ! -f $start_jobs_log ]; then
+	mkdir /sdcard/Android/start_jobs
+	touch $start_jobs_log
+	echo "#如果有问题，请携带日志反馈" >$start_jobs_log
 fi
 #关闭唤醒锁，尝试解决息屏不处理的问题
 echo lock_me > /sys/power/wake_unlock
 #开始启动
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> $start_apps_log
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> $start_jobs_log
 
 if [[ -f $crond_rule_list ]]; then
   . "$crond_rule_list"
@@ -44,7 +44,7 @@ start_app() {
   if [[ ! "$pkg" == "" ]]; then
     # 除去包名后面的启动类名
     app_name=$(echo $app_name | cut -d '/' -f 1)
-    echo "$(date '+%F %T') | 启动$isDual $user_id $pkg" >> $start_apps_log
+    echo "$(date '+%F %T') | 启动$isDual $user_id $pkg" >> $start_jobs_log
     pm enable $app_name
     am start $pkg
     sleep 1
@@ -53,10 +53,10 @@ start_app() {
 
 #获取前台应用包名
 front_pkg=`dumpsys window | grep mTopFullscreenOpaqueWindowState | sed 's/ /\n/g' | tail -n 1 | sed 's/\/.*$//g'`
-echo "$(date '+%F %T') | 前台应用包名为 $front_pkg" >> $start_apps_log
+echo "$(date '+%F %T') | 前台应用包名为 $front_pkg" >> $start_jobs_log
 
 worklist=$(cat "$White_List" | grep -v '^#' | cut -f2 -d '=')
-#echo "$(date '+%F %T') | 勿扰应用包名为 $worklist" >> $start_apps_log
+#echo "$(date '+%F %T') | 勿扰应用包名为 $worklist" >> $start_jobs_log
 
 #pkgs内的应用在前台时，不会启动支付宝任务(类似于游戏模式)
 #pkgs=(
@@ -100,11 +100,11 @@ if [[ "$result" == "" ]]; then
   else
     # 如果传入了参数，则只启动指定应用，args: pkg no_start kill_time disable_app
     if [[ "$Screen_status" != "true" && "$2" == "true" ]]; then
-      echo "$(date '+%F %T') | 亮屏时不启动 $arg_pkg" >> $start_apps_log
+      echo "$(date '+%F %T') | 亮屏时不启动 $arg_pkg" >> $start_jobs_log
     else
       start_app $arg_pkg
       if [[ "$not_kill_time_left" -le "$hh" && "$hh" -le "$not_kill_time_right" ]]; then
-        echo "$(date '+%F %T') | 在 $not_kill_time_left 到 $not_kill_time_right 之间，不杀进程" >> $start_apps_log
+        echo "$(date '+%F %T') | 在 $not_kill_time_left 到 $not_kill_time_right 之间，不杀进程" >> $start_jobs_log
       else
         # 如果有单独设置杀进程时间，则使用单独设置的时间，否则使用全局配置
         if [[ -n "$3" ]]; then
@@ -116,5 +116,5 @@ if [[ "$result" == "" ]]; then
     fi
   fi
 else
-    echo "$(date '+%F %T') | $result 什么也不做" >> $start_apps_log
+    echo "$(date '+%F %T') | $result 什么也不做" >> $start_jobs_log
 fi

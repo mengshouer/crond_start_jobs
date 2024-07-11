@@ -1,4 +1,4 @@
-# crond_start_apps
+# crond_start_jobs
 
 `模块刷入重启后查看`
 
@@ -6,7 +6,7 @@
 管理器
   └── /sdcard
      └── /Android
-        └── /start_apps  <--- 模块生成的目录
+        └── /start_jobs  <--- 模块生成的目录
            │
            ├── cron_set.sh     <--- 在里面自定义参数
            ├── Run_cron.sh     <--- cron_set.sh 文件定义好之后以 root 执行
@@ -20,7 +20,7 @@
 
 ## 参数设置
 
-[cron_set.sh](https://github.com/mengshouer/crond_start_apps/blob/main/AndroidFile/cron_set.sh)
+[cron_set.sh](https://github.com/mengshouer/crond_start_jobs/blob/main/AndroidFile/cron_set.sh)
 
 ## 为什么会有这个模块
 

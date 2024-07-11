@@ -1,7 +1,7 @@
-id=crond_start_apps
-name=自定义Cron启动应用
+id=crond_start_jobs
+name=自定义Cron启动任务
 version=v1.0.8
 versionCode=20240711
 author=mengshouer
-description=自定义Cron启动应用，配合某些软件使用
-updateJson=https://cdn.jsdelivr.net/gh/mengshouer/crond_start_apps@main/update.json
+description=自定义Cron启动任务，配合某些软件使用
+updateJson=https://cdn.jsdelivr.net/gh/mengshouer/crond_start_jobs@main/update.json

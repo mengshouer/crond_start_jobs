@@ -1,5 +1,5 @@
 MODDIR=${0%/*}
-start_apps_log=/sdcard/Android/start_apps/log.md
+start_jobs_log=/sdcard/Android/start_jobs/log.md
 
 arg_pkg=$1
 after_x_seconds_to_kill=$2
@@ -34,12 +34,12 @@ if [[ $after_x_seconds_to_kill -gt 0 ]]; then
     fi
   fi
 
-  echo "$(date '+%F %T') | $text$isDual $user_id $app_name" >> $start_apps_log
+  echo "$(date '+%F %T') | $text$isDual $user_id $app_name" >> $start_jobs_log
   if [[ "$isDual" == "" ]]; then
     am force-stop $app_name
   else
     am force-stop --user $user_id $app_name
   fi
 else
-  echo "$(date '+%F %T') | kill时间不为正数，不关闭$isDual $user_id $app_name" >> $start_apps_log
+  echo "$(date '+%F %T') | kill时间不为正数，不关闭$isDual $user_id $app_name" >> $start_jobs_log
 fi

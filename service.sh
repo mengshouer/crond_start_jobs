@@ -30,7 +30,7 @@ Wait_until_login
 #赋权才能正常运行
 chmod -R 0777 "$MODDIR"
 #注入sh进程
-. "$MODDIR"/script/start_apps_functions.sh
+. "$MODDIR"/script/start_jobs_functions.sh
 #清空log
 logd_clear "开机启动完成: [service.sh]"
 

@@ -1,4 +1,4 @@
-start_apps_dir="/data/media/0/Android/start_apps"
-if [ -d $start_apps_dir ]; then
-  rm -rf $start_apps_dir
+start_jobs_dir="/data/media/0/Android/start_jobs"
+if [ -d $start_jobs_dir ]; then
+  rm -rf $start_jobs_dir
 fi

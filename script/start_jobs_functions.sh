@@ -14,8 +14,8 @@ log_md_set_cron_clear() {
   basic_Information
   logd "开始运行: [$cron_d_path/root]"
   logd "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  logd "┃杀死上次定时 | pid: $start_apps_crond_pid_1"
-  logd "┃定时启动成功 | pid: $start_apps_crond_pid_2"
+  logd "┃杀死上次定时 | pid: $start_jobs_crond_pid_1"
+  logd "┃定时启动成功 | pid: $start_jobs_crond_pid_2"
   logd "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
 
@@ -29,12 +29,12 @@ basic_Information() {
 
 #检测关键文件
 #赋权才能正常运行
-start_apps_list_path="/sdcard/Android/start_apps"
-chmod -R 0777 "$start_apps_list_path"
-if [[ ! -d "$start_apps_list_path" ]]; then
+start_jobs_list_path="/sdcard/Android/start_jobs"
+chmod -R 0777 "$start_jobs_list_path"
+if [[ ! -d "$start_jobs_list_path" ]]; then
   echo "- 模块Android目录不存在！"
   exit 88
 fi
 
 #配置log文件路径
-log="$start_apps_list_path/log.md"
+log="$start_jobs_list_path/log.md"
