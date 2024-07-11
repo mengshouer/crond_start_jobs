@@ -93,6 +93,8 @@ if [[ "$result" == "" ]]; then
         fi
         disable_app=$(eval "echo \$cron_config_disable_app$i")
         nohup sh $MODDIR/stop_app.sh "$cron_config_pkg" $after_x_seconds_to_kill $disable_app > /dev/null 2>&1 &
+      elif [[ -n $(eval "echo \$cron_custom_shell$i") ]]; then
+        eval "$cron_custom_shell$i"
       else
         break
       fi

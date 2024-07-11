@@ -1,6 +1,6 @@
 {
-  "version": "v1.0.8",
-  "versionCode": 20240711,
+  "version": "v1.0.9",
+  "versionCode": 20240712,
   "zipUrl": "https://cdn.jsdelivr.net/gh/mengshouer/crond_start_jobs@release/crond_start_jobs.zip",
   "changelog": "https://cdn.jsdelivr.net/gh/mengshouer/crond_start_jobs@main/CHANGELOG.md"
 }

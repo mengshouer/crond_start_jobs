@@ -22,7 +22,7 @@ jobs:
       - name: Move and zip files
         run: |
           mkdir -p ./publish/
-          zip -r publish/crond_start_jobs.zip . -x .git/\* .github/\* publish LICENSE *\.md update.json
+          zip -r publish/crond_start_jobs.zip . -x .git/\* .github/\* publish/\* LICENSE *\.md update.json
 
       - name: Delete current release assets
         uses: andreaswilli/delete-release-assets-action@v3.0.0

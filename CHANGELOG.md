@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.9
+
+- feat: 添加自定义指令运行
+
 ## v1.0.8
 
 - refactor: 更改应用名

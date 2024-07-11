@@ -53,6 +53,11 @@ for i in $(seq 1 $cron_count); do
     [[ -n $(eval "echo \$cron_config_disable_app$i") ]] && disable_app="true" || disable_app="false"
     echo "- 定时设置 | $cron_config_pkg | $cron_config_rule"
     echo "$cron_config_rule $mod_path/script/run_jobs.sh '$cron_config_pkg' $no_start $kill_time $disable_app" >> $cron_d_path/root
+  elif [[ -n $(eval "echo \$cron_custom_shell$i") ]]; then
+    eval "cron_custom_shell=\$cron_custom_shell$i"
+    eval "cron_config_rule=\$cron_config_rule$i"
+    echo "- 定时设置(自定义指令) | $cron_custom_shell | $cron_config_rule"
+    echo "$cron_config_rule $mod_path/script/run_shell.sh '$cron_custom_shell'" >> $cron_d_path/root
   else
     break
   fi
