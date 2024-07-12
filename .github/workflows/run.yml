@@ -56,6 +56,7 @@ jobs:
 
       - name: Purge jsdelivr CDN
         run: |
+          curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/update.json"
           cd publish || exit 1
           for file in $(ls); do
             curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file}"
