@@ -6,24 +6,20 @@ start_jobs_list_path="/sdcard/Android/start_jobs"
 
 #定义变量
 if [[ -f "/data/adb/ksud" ]]; then
-  S=$(/data/adb/ksud -V | awk '/ksud/{gsub("ksud ", ""); print substr($0,1,4)}')
-  if [[ "$S" = "v0.3" ]]; then
-    alias crond="/data/adb/busybox/crond"
-  else
-    alias crond="/data/adb/busybox/crond"
-  fi
+  alias crond="/data/adb/busybox/crond"
 else
   alias crond="\$( magisk --path )/.magisk/busybox/crond"
 fi
 
 logd "初始化完成: [initial.sh]"
 
-if [[ -f "$MODDIR"/script/set_cron.d/root ]]; then
+if [[ -f "$MODDIR/script/set_cron.d/root" ]]; then
   crond -c "$MODDIR"/script/set_cron.d
   crond_root_file=$MODDIR/script/set_cron.d/root
 elif [[ -f "$start_jobs_list_path/crontab-bak" ]]; then
-  cp -f "$start_jobs_list_path/crontab-bak" "$MODDIR"/script/set_cron.d/root
-  crond -c "$MODDIR"/script/set_cron.d
+  mkdir -p $MODDIR/script/set_cron.d
+  cp -f $start_jobs_list_path/crontab-bak $MODDIR/script/set_cron.d/root
+  crond -c $MODDIR/script/set_cron.d
   crond_root_file=$MODDIR/script/set_cron.d/root
 fi
 

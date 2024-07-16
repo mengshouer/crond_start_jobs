@@ -32,12 +32,7 @@ fi
 
 #定义变量
 if [[ -f "/data/adb/ksud" ]]; then
-  S=$(/data/adb/ksud -V | awk '/ksud/{gsub("ksud ", ""); print substr($0,1,4)}')
-  if [[ "$S" = "v0.3" ]]; then
-    alias crond="/data/adb/busybox/crond"
-  else
-    alias crond="/data/adb/busybox/crond"
-  fi
+  alias crond="/data/adb/busybox/crond"
 else
   alias crond="\$( magisk --path )/.magisk/busybox/crond"
 fi
