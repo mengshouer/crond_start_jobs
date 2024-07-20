@@ -1,4 +1,3 @@
-#全局变量
 MODDIR=${0%/*}
 #等待用户登录
 Wait_until_login() {

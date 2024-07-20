@@ -20,47 +20,24 @@ MyPrint "╚══════════════════════�
 MyPrint " "
 #文件夹类型
 start_jobs_list_path="/sdcard/Android/start_jobs"
-start_jobs_list_path_old="/sdcard/Android/start_jobs_old"
 cron_set_dir="${start_jobs_list_path}"
+backup_dir="${start_jobs_list_path}/backup"
 
 #文件类型
 White_List="${start_jobs_list_path}/勿扰名单.prop"
 cron_set_file="${cron_set_dir}/cron_set.sh"
-cron_set_example="${cron_set_dir}/cron_set_example.sh"
+cron_set_example="${backup_dir}/cron_set_example.sh"
 Run_cron_sh="${cron_set_dir}/Run_cron.sh"
 
-magisk_util_functions="/data/adb/magisk/util_functions.sh"
-grep -q 'lite_modules' "${magisk_util_functions}" && modules_path="lite_modules" || modules_path="modules"
-mod_path="/data/adb/${modules_path}/crond_start_jobs"
-script_dir="${mod_path}/script"
-
-# 判断是否安装过
-if [[ -d ${script_dir}/tmp/DATE ]] && [[ -d ${start_jobs_list_path} ]]; then
-  mkdir -p "$start_jobs_list_path_old"
-  cp -rf "$start_jobs_list_path" "$start_jobs_list_path_old"
-  rm -rf "$start_jobs_list_path"
-  MyPrint "检测到安装过模块，旧配置文件已经自动备份。"
-fi
-
-#获取ksu的busybox地址
-busybox="/data/adb/ksu/bin/busybox"
-#释放地址
-filepath="/data/adb/busybox"
-#如果没有此文件夹则创建
-#检查Busybox并释放
-if [[ -f $busybox ]]; then
-  if [[ ! -f $filepath ]]; then
-    mkdir -p "$filepath"
-  fi
-  #存在Busybox开始释放
-  "$busybox" --install -s "$filepath"
-  MyPrint "已安装busybox。"
-fi
-
 [[ -d ${cron_set_dir} ]] || mkdir -p ${cron_set_dir}
+[[ -d ${backup_dir} ]] || mkdir -p ${backup_dir}
 [[ -f ${White_List} ]] || cp -r "${MODPATH}"/AndroidFile/勿扰名单.prop ${start_jobs_list_path}/
 [[ -f ${cron_set_file} ]] || cp -r "${MODPATH}"/AndroidFile/cron_set.sh ${cron_set_dir}/
 rm -f ${Run_cron_sh} ${cron_set_example}
 cp "${MODPATH}"/AndroidFile/Run_cron.sh ${cron_set_dir}/
 cp "${MODPATH}"/AndroidFile/cron_set.sh ${cron_set_example}
 rm -rf "${MODPATH}"/AndroidFile/
+
+# 删除旧文件，保留几个版本后删除
+rm -f "${cron_set_dir}/crontab-bak"
+rm -f "${backup_dir}/cron_set_example.sh"
