@@ -1,7 +1,7 @@
 #!/system/bin/sh
 #此文件每次安装会覆盖，不要在此文件中添加自定义内容
 module_name="crond_start_jobs"
-module_path=$(find /data/adb -type d -name "$module_name" -print -quit)
+module_path=$(find /data/adb -type d -name "$module_name" | head -n 1)
 
 set_path=${0%/*}
 backup_dir=$set_path/backup
