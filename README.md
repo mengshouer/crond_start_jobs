@@ -4,12 +4,13 @@
 
 ```
 管理器
-  └── /sdcard
-     └── /Android
-        └── /start_jobs  <--- 模块生成的目录
+  └── /data
+     └── /adb
+        └── /start_jobs        <--- 模块生成的目录
            │
+           ├── backup          <--- crond 运行目录
            ├── cron_set.sh     <--- 在里面自定义参数
-           ├── Run_cron.sh     <--- cron_set.sh 文件定义好之后以 root 执行
+           ├── Run_cron.sh     <--- cron_set.sh 文件配置好后执行
            ├── log.md          <--- 日志文件: 每次重启设备或运行 Run_cron.sh 重新记录
            └── 勿扰名单.prop    <--- 勿扰名单里的应用在前台时，不会启动应用(勿扰，类似游戏模式)
 ```

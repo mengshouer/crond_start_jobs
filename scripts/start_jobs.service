@@ -1,0 +1,52 @@
+#!/system/bin/sh
+
+scripts_dir="${0%/*}"
+. "${scripts_dir}/utils.sh"
+source /data/adb/box/settings.ini
+
+start_jobs_path="/data/adb/start_jobs"
+backup_dir="$start_jobs_path/backup"
+
+start_cron() {
+  if [[ -n $(which nice) ]]; then
+    nice -n -10 busybox crond -c $backup_dir
+  else
+    busybox crond -c $backup_dir
+  fi
+
+  sleep 2
+
+  cron_pid=$(pgrep -f "crond -c ${backup_dir}")
+
+  if [[ -n $cron_pid ]]; then
+    crond_root_file=$backup_dir/root
+    echo $cron_pid > $backup_dir/cron_pid
+    basic_Information
+    logd "开始运行: [$crond_root_file]"
+    logd "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  else
+    basic_Information
+    logd "未检测到 cron 任务，需要修改配置文件后，手动运行一遍 ${start_jobs_path}/Run_cron.sh"
+    exit 1
+  fi
+}
+
+stop_cron() {
+  # 杀死上次定时，不知道为啥 MT 里面跑的 pgrep 读不到 ksu initial.sh 运行的 crond -c 的进程
+  start_jobs_last_pid=$(cat $backup_dir/cron_pid)
+  [[ -z $start_jobs_last_pid ]] && start_jobs_last_pid=$(pgrep -f "crond -c ${cron_d_path}")
+  for i in $start_jobs_last_pid; do
+    kill -15 $i
+  done
+  rm -f $backup_dir/cron_pid
+}
+
+case "$1" in
+  start)
+    stop_cron >> /dev/null 2>&1
+    start_cron
+    ;;
+  stop)
+    stop_cron
+    ;;
+esac

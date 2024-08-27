@@ -1,17 +1,10 @@
-MODDIR=${0%/*}
-start_jobs_log=/sdcard/Android/start_jobs/log.md
-White_List=/sdcard/Android/start_jobs/勿扰名单.prop
-crond_rule_list=/sdcard/Android/start_jobs/cron_set.sh
-#创建日志文件
-if [ ! -f $start_jobs_log ]; then
-	mkdir /sdcard/Android/start_jobs
-	touch $start_jobs_log
-	echo "#如果有问题，请携带日志反馈" >$start_jobs_log
-fi
-#关闭唤醒锁，尝试解决息屏不处理的问题
-echo lock_me > /sys/power/wake_unlock
+#!/system/bin/sh
+
+scripts_dir=${0%/*}
+. "$scripts_dir"/utils.sh
+
 #开始启动
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> $start_jobs_log
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >> $logfile
 
 if [[ -f $crond_rule_list ]]; then
   . "$crond_rule_list"
@@ -44,7 +37,7 @@ start_app() {
   if [[ ! "$pkg" == "" ]]; then
     # 除去包名后面的启动类名
     app_name=$(echo $app_name | cut -d '/' -f 1)
-    echo "$(date '+%F %T') | 启动$isDual $user_id $pkg" >> $start_jobs_log
+    echo "$(date '+%F %T') | 启动$isDual $user_id $pkg" >> $logfile
     pm enable $app_name
     am start $pkg
     sleep 1
@@ -53,10 +46,13 @@ start_app() {
 
 #获取前台应用包名
 front_pkg=`dumpsys window | grep mTopFullscreenOpaqueWindowState | sed 's/ /\n/g' | tail -n 1 | sed 's/\/.*$//g'`
-echo "$(date '+%F %T') | 前台应用包名为 $front_pkg" >> $start_jobs_log
+echo "$(date '+%F %T') | 前台应用包名为 $front_pkg" >> $logfile
 
-worklist=$(cat "$White_List" | grep -v '^#' | cut -f2 -d '=')
-#echo "$(date '+%F %T') | 勿扰应用包名为 $worklist" >> $start_jobs_log
+#获取后台正在运行的应用包名
+back_pkg=`dumpsys activity processes | grep "ProcessRecord"`
+
+worklist=$(cat "$white_list" | grep -v '^#' | cut -f2 -d '=')
+#echo "$(date '+%F %T') | 勿扰应用包名为 $worklist" >> $logfile
 
 #pkgs内的应用在前台时，不会启动支付宝任务(类似于游戏模式)
 #pkgs=(
@@ -92,7 +88,7 @@ if [[ "$result" == "" ]]; then
           after_x_seconds_to_kill=$after_x_seconds_to_kill
         fi
         disable_app=$(eval "echo \$cron_config_disable_app$i")
-        nohup sh $MODDIR/stop_app.sh "$cron_config_pkg" $after_x_seconds_to_kill $disable_app > /dev/null 2>&1 &
+        nohup sh $scripts_dir/stop_app.sh "$cron_config_pkg" $after_x_seconds_to_kill $disable_app > /dev/null 2>&1 &
       elif [[ -n $(eval "echo \$cron_custom_shell$i") ]]; then
         eval "$cron_custom_shell$i"
       else
@@ -102,21 +98,21 @@ if [[ "$result" == "" ]]; then
   else
     # 如果传入了参数，则只启动指定应用，args: pkg no_start kill_time disable_app
     if [[ "$Screen_status" != "true" && "$2" == "true" ]]; then
-      echo "$(date '+%F %T') | 亮屏时不启动 $arg_pkg" >> $start_jobs_log
+      echo "$(date '+%F %T') | 亮屏时不启动 $arg_pkg" >> $logfile
     else
       start_app $arg_pkg
       if [[ "$not_kill_time_left" -le "$hh" && "$hh" -le "$not_kill_time_right" ]]; then
-        echo "$(date '+%F %T') | 在 $not_kill_time_left 到 $not_kill_time_right 之间，不杀进程" >> $start_jobs_log
+        echo "$(date '+%F %T') | 在 $not_kill_time_left 到 $not_kill_time_right 之间，不杀进程" >> $logfile
       else
         # 如果有单独设置杀进程时间，则使用单独设置的时间，否则使用全局配置
         if [[ -n "$3" ]]; then
           after_x_seconds_to_kill=$3
         fi
         # disable_app=$4
-        nohup sh $MODDIR/stop_app.sh "$arg_pkg" $after_x_seconds_to_kill $4 > /dev/null 2>&1 &
+        nohup sh $scripts_dir/stop_app.sh "$arg_pkg" $after_x_seconds_to_kill $4 > /dev/null 2>&1 &
       fi
     fi
   fi
 else
-    echo "$(date '+%F %T') | $result 什么也不做" >> $start_jobs_log
+    echo "$(date '+%F %T') | $result 什么也不做" >> $logfile
 fi

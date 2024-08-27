@@ -1,0 +1,26 @@
+#!/system/bin/sh
+
+scripts_dir="${0%/*}"
+service_file="${scripts_dir}/start_jobs.service"
+run_path="/data/adb/start_jobs/backup"
+. "$scripts_dir"/utils.sh
+
+
+events="$1"
+monitor_dir="$2"
+monitor_file="$3"
+
+service_control() {
+  if [ "${monitor_file}" = "disable" ]; then
+    if [ "${events}" = "d" ]; then
+      logd_clear
+      "${service_file}" start
+    elif [ "${events}" = "n" ]; then
+      "${service_file}" stop
+    fi
+  fi
+}
+
+mkdir -p "${run_path}"
+
+service_control

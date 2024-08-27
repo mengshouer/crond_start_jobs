@@ -3,31 +3,31 @@
 module_name="crond_start_jobs"
 module_path=$(find /data/adb -type d -name "$module_name" | head -n 1)
 
-set_path=${0%/*}
-backup_dir=$set_path/backup
-set_file=$set_path/cron_set.sh
-cron_d_path=$module_path/script/set_cron.d
+start_jobs_path="/data/adb/start_jobs"
+scripts_dir=$start_jobs_path/scripts
+. $scripts_dir/utils.sh
+
+cron_d_path=$backup_dir
 #不存在则创建目录
-[[ -d $cron_d_path ]] || mkdir -p $cron_d_path
 [[ -d $backup_dir ]] || mkdir -p $backup_dir
 
-. $module_path/script/start_jobs_functions.sh
 
-if [[ -f $set_file ]]; then
-  . "$set_file"
+if [[ -f $crond_rule_list ]]; then
+  source "$crond_rule_list"
 else
-  echo "- [!]: 缺少$set_file 文件" && exit 2
+  echo "- [!]: 缺少 $crond_rule_list 文件" && exit 2
 fi
 
-# 杀死上次定时
-start_jobs_crond_pid_1=$(cat $backup_dir/cron_pid)
-for i in $start_jobs_crond_pid_1; do
-  echo "- 杀死上次定时 | pid: $i"
-  kill -9 $i
-done
+if [[ ! -f $scripts_dir/run_jobs.sh ]]; then
+  echo "- 模块脚本缺失！" && exit 2
+fi
+
+# # delete the previous crontab and create a new crontab
+busybox crontab -c "${cron_d_path}" -r
 
 #开启定时
-echo "" > $cron_d_path/root
+touch $cron_d_path/root
+chmod 755 $cron_d_path/root
 for i in $(seq 1 $cron_count); do
   if [[ -n $(eval "echo \$cron_config_pkg$i") ]]; then
     eval "cron_config_pkg=\$cron_config_pkg$i"
@@ -36,35 +36,16 @@ for i in $(seq 1 $cron_count); do
     [[ -n $(eval "echo \$cron_config_kill_time$i") ]] && kill_time=$(eval "echo \$cron_config_kill_time$i") || kill_time=$after_x_seconds_to_kill
     [[ -n $(eval "echo \$cron_config_disable_app$i") ]] && disable_app="true" || disable_app="false"
     echo "- 定时设置 | $cron_config_pkg | $cron_config_rule"
-    echo "$cron_config_rule $module_path/script/run_jobs.sh '$cron_config_pkg' $no_start $kill_time $disable_app" >> $cron_d_path/root
+    echo "$cron_config_rule $scripts_dir/run_jobs.sh '$cron_config_pkg' $no_start $kill_time $disable_app" >> $cron_d_path/root
   elif [[ -n $(eval "echo \$cron_custom_shell$i") ]]; then
     eval "cron_custom_shell=\$cron_custom_shell$i"
     eval "cron_config_rule=\$cron_config_rule$i"
     echo "- 定时设置(自定义指令) | $cron_custom_shell | $cron_config_rule"
-    echo "$cron_config_rule $module_path/script/run_shell.sh '$cron_custom_shell'" >> $cron_d_path/root
+    echo "$cron_config_rule $scripts_dir/run_shell.sh '$cron_custom_shell'" >> $cron_d_path/root
   else
     break
   fi
 done
 
-cp -f $cron_d_path/root $backup_dir/crontab-bak
-busybox crond -c "$cron_d_path"
-start_jobs_crond_pid_2="$(ps -ef | grep -v 'grep' | grep 'crond' | grep 'crond_start_jobs' | awk '{print $2}')"
-echo "- 定时启动成功 | pid: $start_jobs_crond_pid_2"
-echo $start_jobs_crond_pid_2 > $backup_dir/cron_pid
+echo "- | 定时更新成功 |"
 log_md_set_cron_clear
-# if [[ -f $module_path/script/run_jobs.sh ]]; then
-#   for i in $(seq 1 $cron_count); do
-#     if [[ -n $(eval "echo \$cron_config_pkg$i") ]]; then
-#       eval "cron_config_pkg=\$cron_config_pkg$i"
-#       sh $module_path/script/run_jobs.sh "$cron_config_pkg"
-#     else
-#       break
-#     fi
-#   done
-# else
-#   echo "- 模块脚本缺失！"
-# fi
-if [[ ! -f $module_path/script/run_jobs.sh ]]; then
-  echo "- 模块脚本缺失！"
-fi
