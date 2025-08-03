@@ -13,7 +13,6 @@ monitor_file="$3"
 service_control() {
   if [ "${monitor_file}" = "disable" ]; then
     if [ "${events}" = "d" ]; then
-      logd_clear
       "${service_file}" start
     elif [ "${events}" = "n" ]; then
       "${service_file}" stop

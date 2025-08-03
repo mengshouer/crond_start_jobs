@@ -7,7 +7,6 @@ start_jobs_path="/data/adb/start_jobs"
 scripts_dir=$start_jobs_path/scripts
 . $scripts_dir/utils.sh
 
-cron_d_path=$backup_dir
 #不存在则创建目录
 [[ -d $backup_dir ]] || mkdir -p $backup_dir
 
@@ -48,4 +47,5 @@ for i in $(seq 1 $cron_count); do
 done
 
 echo "- | 定时更新成功 |"
-log_md_set_cron_clear
+logd_clear "重设定时"
+basic_Information

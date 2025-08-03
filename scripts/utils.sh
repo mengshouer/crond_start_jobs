@@ -2,7 +2,7 @@
 
 start_jobs_path="/data/adb/start_jobs"
 backup_dir="$start_jobs_path/backup"
-
+cron_d_path=$backup_dir
 white_list=$start_jobs_path/勿扰名单.prop
 crond_rule_list=$start_jobs_path/cron_set.sh
 
@@ -43,10 +43,4 @@ basic_Information() {
   logd "型号: $(getprop ro.product.model)"
   logd "代号: $(getprop ro.product.device)"
   logd "安卓: $(getprop ro.build.version.release)"
-}
-
-#重新定时时调用
-log_md_set_cron_clear() {
-  logd_clear "重设定时"
-  basic_Information
 }

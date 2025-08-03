@@ -7,6 +7,10 @@ source /data/adb/box/settings.ini
 start_jobs_path="/data/adb/start_jobs"
 backup_dir="$start_jobs_path/backup"
 
+module_name="crond_start_jobs"
+module_path=$(find /data/adb -type d -name "$module_name" | head -n 1)
+PROPFILE="${module_path}/module.prop"
+
 start_cron() {
   if [[ -n $(which nice) ]]; then
     nice -n -10 busybox crond -c $backup_dir
@@ -17,14 +21,18 @@ start_cron() {
   sleep 2
 
   cron_pid=$(pgrep -f "crond -c ${backup_dir}")
+  
+  logd_clear
 
   if [[ -n $cron_pid ]]; then
     crond_root_file=$backup_dir/root
     echo $cron_pid > $backup_dir/cron_pid
+    sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ 😍 service (pid:$cron_pid) is running !!! ] /g" "$PROPFILE"
     basic_Information
     logd "开始运行: [$crond_root_file]"
     logd "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   else
+    sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ 😱 Module is working! but no service is running !!! ] /g" "$PROPFILE"
     basic_Information
     logd "未检测到 cron 任务，需要修改配置文件后，手动运行一遍 ${start_jobs_path}/Run_cron.sh"
     exit 1
@@ -39,6 +47,7 @@ stop_cron() {
     kill -15 $i
   done
   rm -f $backup_dir/cron_pid
+  sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ ❌ service is not running !!! ] /g" "$PROPFILE"
 }
 
 case "$1" in

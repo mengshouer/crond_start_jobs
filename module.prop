@@ -1,7 +1,7 @@
 id=crond_start_jobs
-name=crond_start_jobs - 自定义Cron启动任务
-version=v1.2.0
-versionCode=20240827
+name=crond_start_jobs
+version=v1.2.1
+versionCode=20250803
 author=mengshouer
-description=模块配置目录 /data/adb/start_jobs
+description=自定义Cron启动任务，模块配置目录 /data/adb/start_jobs
 updateJson=https://raw.githubusercontent.com/mengshouer/crond_start_jobs/main/update.json
