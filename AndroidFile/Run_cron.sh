@@ -27,10 +27,25 @@ busybox crontab -c "${cron_d_path}" -r
 #开启定时
 touch $cron_d_path/root
 chmod 755 $cron_d_path/root
-for i in $(seq 1 $cron_count); do
+
+# 确定任务数量
+max_count=999  # 默认最大搜索 999 个任务
+
+# 如果设置了cron_count，则使用它作为限制
+if [[ -n "$cron_count" ]] && [[ "$cron_count" -gt 0 ]]; then
+  max_count=$cron_count
+fi
+
+for i in $(seq 1 $max_count); do
+  # 检查是否存在rule配置，如果不存在则说明没有更多任务了
+  eval "cron_config_rule=\$cron_config_rule$i"
+  if [[ -z "$cron_config_rule" ]]; then
+    # 没有rule配置，结束循环
+    break
+  fi
+  
   if [[ -n $(eval "echo \$cron_config_pkg$i") ]]; then
     eval "cron_config_pkg=\$cron_config_pkg$i"
-    eval "cron_config_rule=\$cron_config_rule$i"
     [[ -n $(eval "echo \$cron_config_screen_on_no_start$i") ]] && no_start="true" || no_start="false"
     [[ -n $(eval "echo \$cron_config_kill_time$i") ]] && kill_time=$(eval "echo \$cron_config_kill_time$i") || kill_time=$after_x_seconds_to_kill
     [[ -n $(eval "echo \$cron_config_disable_app$i") ]] && disable_app="true" || disable_app="false"
@@ -38,11 +53,8 @@ for i in $(seq 1 $cron_count); do
     echo "$cron_config_rule $scripts_dir/run_jobs.sh '$cron_config_pkg' $no_start $kill_time $disable_app" >> $cron_d_path/root
   elif [[ -n $(eval "echo \$cron_custom_shell$i") ]]; then
     eval "cron_custom_shell=\$cron_custom_shell$i"
-    eval "cron_config_rule=\$cron_config_rule$i"
     echo "- 定时设置(自定义指令) | $cron_custom_shell | $cron_config_rule"
     echo "$cron_config_rule $scripts_dir/run_shell.sh '$cron_custom_shell'" >> $cron_d_path/root
-  else
-    break
   fi
 done
 

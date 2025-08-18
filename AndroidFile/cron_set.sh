@@ -13,8 +13,8 @@ not_kill_time_left=650
 not_kill_time_right=730
 
 
-# 定时任务数量，根据下面实际填写，可以多过实际数量，但是过多会导致运行时间变长
-cron_count=2
+# 定时任务数量，不启用默认读取 999 个，手动设置可以限制数量
+# cron_count=2
 
 # 所有的 cron_config_配置项 一一对应，不要多也不要少
 # cron_config_pkg 为包名/启动类名，前面添加 --user 999 则启动双开应用，有些多开软件 user 不是 999，需要自己查看

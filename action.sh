@@ -3,8 +3,10 @@ scripts_dir="/data/adb/start_jobs/scripts"
 service_file="${scripts_dir}/start_jobs.service"
 . "$scripts_dir"/utils.sh
 
-start_jobs_last_pid=$(cat $backup_dir/cron_pid)
-[[ -z $start_jobs_last_pid ]] && start_jobs_last_pid=$(pgrep -f "crond -c ${cron_d_path}")
+start_jobs_last_pid=$(cat "$backup_dir/cron_pid" 2>/dev/null)
+if [[ -z "$start_jobs_last_pid" ]]; then
+  start_jobs_last_pid=$(pgrep -f "crond -c ${cron_d_path}")
+fi
 
 if [[ -n "${start_jobs_last_pid}" ]]; then
   echo "Stopping crond with PID: $start_jobs_last_pid"

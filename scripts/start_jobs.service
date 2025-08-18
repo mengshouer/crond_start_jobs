@@ -2,7 +2,6 @@
 
 scripts_dir="${0%/*}"
 . "${scripts_dir}/utils.sh"
-source /data/adb/box/settings.ini
 
 start_jobs_path="/data/adb/start_jobs"
 backup_dir="$start_jobs_path/backup"
@@ -11,28 +10,43 @@ module_name="crond_start_jobs"
 module_path=$(find /data/adb -type d -name "$module_name" | head -n 1)
 PROPFILE="${module_path}/module.prop"
 
-start_cron() {
-  if [[ -n $(which nice) ]]; then
-    nice -n -10 busybox crond -c $backup_dir
-  else
-    busybox crond -c $backup_dir
-  fi
+# 进程查找函数
+get_cron_pid() {
+  local pid_file="$backup_dir/cron_pid"
+  [[ -f "$pid_file" ]] && cat "$pid_file" || pgrep -f "crond -c ${cron_d_path}"
+}
 
+# 模块描述更新函数
+update_module_description() {
+  local status="$1"
+  sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ $status ] /g" "$PROPFILE"
+}
+
+start_cron() {
+  # 优化nice命令检查
+  local nice_cmd=""
+  if command -v nice &> /dev/null; then
+    nice_cmd="nice -n -10"
+  fi
+  
+  # 启动crond
+  $nice_cmd busybox crond -c $backup_dir
   sleep 2
 
-  cron_pid=$(pgrep -f "crond -c ${backup_dir}")
+  # 获取进程ID
+  local cron_pid=$(get_cron_pid)
   
   logd_clear
 
   if [[ -n $cron_pid ]]; then
-    crond_root_file=$backup_dir/root
+    local crond_root_file=$backup_dir/root
     echo $cron_pid > $backup_dir/cron_pid
-    sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ 😍 service (pid:$cron_pid) is running !!! ] /g" "$PROPFILE"
+    update_module_description "😍 service (pid:$cron_pid) is running !!!"
     basic_Information
     logd "开始运行: [$crond_root_file]"
     logd "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   else
-    sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ 😱 Module is working! but no service is running !!! ] /g" "$PROPFILE"
+    update_module_description "😱 Module is working! but no service is running !!!"
     basic_Information
     logd "未检测到 cron 任务，需要修改配置文件后，手动运行一遍 ${start_jobs_path}/Run_cron.sh"
     exit 1
@@ -40,14 +54,19 @@ start_cron() {
 }
 
 stop_cron() {
-  # 杀死上次定时，不知道为啥 MT 里面跑的 pgrep 读不到 ksu initial.sh 运行的 crond -c 的进程
-  start_jobs_last_pid=$(cat $backup_dir/cron_pid)
-  [[ -z $start_jobs_last_pid ]] && start_jobs_last_pid=$(pgrep -f "crond -c ${cron_d_path}")
-  for i in $start_jobs_last_pid; do
-    kill -15 $i
-  done
+  # 获取所有需要停止的进程ID
+  local pids=$(get_cron_pid)
+  
+  # 批量停止进程
+  if [[ -n "$pids" ]]; then
+    for pid in $pids; do
+      kill -15 "$pid" 2>/dev/null
+    done
+  fi
+  
+  # 清理文件
   rm -f $backup_dir/cron_pid
-  sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ ❌ service is not running !!! ] /g" "$PROPFILE"
+  update_module_description "❌ service is not running !!!"
 }
 
 case "$1" in

@@ -5,6 +5,7 @@ backup_dir="$start_jobs_path/backup"
 cron_d_path=$backup_dir
 white_list=$start_jobs_path/勿扰名单.prop
 crond_rule_list=$start_jobs_path/cron_set.sh
+logfile="$start_jobs_path/log.md"
 
 if [[ ! -d "$start_jobs_path" ]]; then
   echo "- 模块目录 $start_jobs_path 不存在！"
@@ -18,29 +19,33 @@ fi
 # 关键文件赋权才能正常运行
 chmod -R 0755 "$start_jobs_path"
 
-#配置log文件路径
-logfile="$start_jobs_path/log.md"
 if [[ ! -f "$logfile" ]]; then
-  touch "$logfile"
-  echo "| 如果有问题，请携带日志反馈 |" > $logfile
+  echo "| 如果有问题，请携带日志反馈 |" > "$logfile"
 fi
 
-#这个是主log
+_log_timestamp() {
+  date '+%g/%m/%d %H:%M'
+}
+
 logd() {
-  echo "[$(date '+%g/%m/%d %H:%M')] | $*"
-  echo "[$(date '+%g/%m/%d %H:%M')] | $*" >> "$logfile"
+  local timestamp=$(_log_timestamp)
+  echo "[$timestamp] | $*"
+  echo "[$timestamp] | $*" >> "$logfile"
 }
 
-#这个用来清空log文件
 logd_clear() {
-  echo "[$(date '+%g/%m/%d %H:%M')] | $*"
-  echo "[$(date '+%g/%m/%d %H:%M')] | $*" > "$logfile"
+  local timestamp=$(_log_timestamp)
+  echo "[$timestamp] | $*" > "$logfile"
 }
 
-#log信息
 basic_Information() {
-  logd "品牌: $(getprop ro.product.brand)"
-  logd "型号: $(getprop ro.product.model)"
-  logd "代号: $(getprop ro.product.device)"
-  logd "安卓: $(getprop ro.build.version.release)"
+  local brand=$(getprop ro.product.brand)
+  local model=$(getprop ro.product.model)
+  local device=$(getprop ro.product.device)
+  local version=$(getprop ro.build.version.release)
+  
+  logd "品牌: $brand"
+  logd "型号: $model"
+  logd "代号: $device"
+  logd "安卓: $version"
 }
