@@ -16,6 +16,22 @@ get_cron_pid() {
   [[ -f "$pid_file" ]] && cat "$pid_file" || pgrep -f "crond -c ${cron_d_path}"
 }
 
+# 唤醒锁控制函数
+enable_wakelock() {
+  if [[ ! -f "${backup_dir}/nowakelock" ]]; then
+    echo "PowerManagerService.noSuspend.crond" >> /sys/power/wake_lock 2>/dev/null
+    logd "已启用设备唤醒锁，防止任务在设备休眠后无法准时执行"
+    logd "如需关闭唤醒锁功能，在 ${backup_dir} 中新建一个 nowakelock 文件"
+  fi
+}
+
+# 释放唤醒锁函数
+disable_wakelock() {
+  if grep -q "PowerManagerService.noSuspend.crond" /sys/power/wake_lock 2>/dev/null; then
+    echo "PowerManagerService.noSuspend.crond" >> /sys/power/wake_unlock 2>/dev/null
+  fi
+}
+
 # 模块描述更新函数
 update_module_description() {
   local status="$1"
@@ -38,9 +54,18 @@ start_cron() {
   
   logd_clear
 
+  # 检查 inotifyd 功能，功能启动在 start.sh
+  if [[ ! -f "${backup_dir}/onlycrond" ]]; then
+    logd "[ inotifyd 已开启 ]：当前可以使用 su 管理器控制模块开关，不需要重启手机"
+    logd "此功能是用 inotifyd 监控模块目录实现的，不经常开关模块的可以关掉，如果是有操作按钮的新版 su 管理器，建议关闭此项，使用操作按钮控制"
+    logd "如需关闭此功能，在 ${backup_dir} 中新建一个 onlycrond 文件，重启生效"
+  fi
+
   if [[ -n $cron_pid ]]; then
     local crond_root_file=$backup_dir/root
     echo $cron_pid > $backup_dir/cron_pid
+    # 启用唤醒锁
+    enable_wakelock
     update_module_description "😍 service (pid:$cron_pid) is running !!!"
     basic_Information
     logd "开始运行: [$crond_root_file]"
@@ -49,6 +74,8 @@ start_cron() {
     update_module_description "😱 Module is working! but no service is running !!!"
     basic_Information
     logd "未检测到 cron 任务，需要修改配置文件后，手动运行一遍 ${start_jobs_path}/Run_cron.sh"
+    # 如果启动失败，释放唤醒锁
+    disable_wakelock
     exit 1
   fi
 }
@@ -64,6 +91,9 @@ stop_cron() {
     done
   fi
   
+  # 释放唤醒锁
+  disable_wakelock
+  
   # 清理文件
   rm -f $backup_dir/cron_pid
   update_module_description "❌ service is not running !!!"
@@ -76,5 +106,11 @@ case "$1" in
     ;;
   stop)
     stop_cron
+    ;;
+  wakelock_on)
+    enable_wakelock
+    ;;
+  wakelock_off)
+    disable_wakelock
     ;;
 esac
