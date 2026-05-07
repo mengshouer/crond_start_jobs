@@ -27,26 +27,26 @@ if [[ -z "$after_x_seconds_to_kill" ]]; then
 fi
 
 # 如果 after_x_seconds_to_kill 不为正数，则不杀进程
-if [[ $after_x_seconds_to_kill -gt 0 ]]; then
-  sleep $after_x_seconds_to_kill
-  
-  local text="关闭"
+if is_uint "$after_x_seconds_to_kill" && [[ "$after_x_seconds_to_kill" -gt 0 ]]; then
+  sleep "$after_x_seconds_to_kill"
+
+  text="关闭"
   if [[ "$disable_app" == "true" ]]; then
     text="禁用"
     if [[ -z "$isDual" ]]; then
-      pm disable-user $app_name
+      pm disable-user "$app_name"
     else
-      pm disable-user --user $user_id $app_name
+      pm disable-user --user "$user_id" "$app_name"
     fi
   fi
 
-  echo "$(date '+%F %T') | $text$isDual $user_id $app_name" >> $logfile
-  
+  echo "$(date '+%F %T') | $text$isDual $user_id $app_name" >> "$logfile"
+
   if [[ -z "$isDual" ]]; then
-    am force-stop $app_name
+    am force-stop "$app_name"
   else
-    am force-stop --user $user_id $app_name
+    am force-stop --user "$user_id" "$app_name"
   fi
 else
-  echo "$(date '+%F %T') | kill时间不为正数，不关闭$isDual $user_id $app_name" >> $logfile
+  echo "$(date '+%F %T') | kill时间不为正数，不关闭$isDual $user_id $app_name" >> "$logfile"
 fi

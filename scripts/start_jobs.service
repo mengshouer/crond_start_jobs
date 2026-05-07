@@ -3,55 +3,121 @@
 scripts_dir="${0%/*}"
 . "${scripts_dir}/utils.sh"
 
-start_jobs_path="/data/adb/start_jobs"
-backup_dir="$start_jobs_path/backup"
-
-module_name="crond_start_jobs"
-module_path=$(find /data/adb -type d -name "$module_name" | head -n 1)
+module_path="$(resolve_module_path 2>/dev/null)"
+if [[ -z "$module_path" ]]; then
+  module_path="$module_default_path"
+fi
 PROPFILE="${module_path}/module.prop"
+WAKELOCK_NAME="crond_start_jobs"
 
 # 进程查找函数
+is_cron_pid() {
+  local pid="$1"
+  local cmdline=""
+
+  [[ -f "/proc/$pid/cmdline" ]] || return 1
+  cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null)"
+
+  case "$cmdline" in
+    *crond*" -c ${cron_d_path}"*|*crond*" -c${cron_d_path}"*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
 get_cron_pid() {
   local pid_file="$backup_dir/cron_pid"
-  [[ -f "$pid_file" ]] && cat "$pid_file" || pgrep -f "crond -c ${cron_d_path}"
+  local live_pids=""
+
+  if [[ -f "$pid_file" ]]; then
+    local pid
+    for pid in $(cat "$pid_file" 2>/dev/null); do
+      if kill -0 "$pid" 2>/dev/null && is_cron_pid "$pid"; then
+        if [[ -n "$live_pids" ]]; then
+          live_pids="${live_pids} ${pid}"
+        else
+          live_pids="${pid}"
+        fi
+      fi
+    done
+  fi
+
+  if [[ -n "$live_pids" ]]; then
+    echo "$live_pids"
+    return 0
+  fi
+
+  pgrep -f "crond -c ${cron_d_path}" 2>/dev/null
 }
 
 # 唤醒锁控制函数
 enable_wakelock() {
-  if [[ ! -f "${backup_dir}/nowakelock" ]]; then
-    echo "PowerManagerService.noSuspend.crond" >> /sys/power/wake_lock 2>/dev/null
-    logd "已启用设备唤醒锁，防止任务在设备休眠后无法准时执行"
-    logd "如需关闭唤醒锁功能，在 ${backup_dir} 中新建一个 nowakelock 文件"
+  if [[ -f "${backup_dir}/nowakelock" ]]; then
+    return 0
   fi
+
+  if ! printf '%s\n' "$WAKELOCK_NAME" > /sys/power/wake_lock 2>/dev/null; then
+    logd "wakelock 写入失败，当前系统休眠后可能无法准时执行任务"
+    return 1
+  fi
+
+  if ! grep -qw "$WAKELOCK_NAME" /sys/power/wake_lock 2>/dev/null; then
+    logd "wakelock 写入未生效，当前系统可能不支持 /sys/power/wake_lock 持锁，休眠后可能无法准时执行任务"
+    return 1
+  fi
+
+  sleep 1
+  if grep -qw "$WAKELOCK_NAME" /sys/power/wake_lock 2>/dev/null; then
+    logd "已启用 wakelock: $WAKELOCK_NAME，防止任务在设备休眠后无法准时执行"
+    logd "如需关闭唤醒锁功能，在 ${backup_dir} 中新建一个 nowakelock 文件"
+    return 0
+  fi
+
+  logd "wakelock 无法持续保持，当前系统可能会立即释放 /sys/power/wake_lock，休眠后可能无法准时执行任务"
+  return 1
 }
 
 # 释放唤醒锁函数
 disable_wakelock() {
-  if grep -q "PowerManagerService.noSuspend.crond" /sys/power/wake_lock 2>/dev/null; then
-    echo "PowerManagerService.noSuspend.crond" >> /sys/power/wake_unlock 2>/dev/null
+  if grep -qw "$WAKELOCK_NAME" /sys/power/wake_lock 2>/dev/null; then
+    printf '%s\n' "$WAKELOCK_NAME" > /sys/power/wake_unlock 2>/dev/null
   fi
 }
 
 # 模块描述更新函数
 update_module_description() {
   local status="$1"
-  sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ $status ] /g" "$PROPFILE"
+  if [[ -f "$PROPFILE" ]]; then
+    sed -Ei "s/^description=(\[.*][[:space:]]*)?/description=[ $status ] /g" "$PROPFILE"
+  fi
+}
+
+wait_pid_exit() {
+  local pid="$1"
+  local wait_count=0
+
+  while kill -0 "$pid" 2>/dev/null; do
+    wait_count=$((wait_count + 1))
+    if [[ "$wait_count" -ge 5 ]]; then
+      kill -9 "$pid" 2>/dev/null
+      break
+    fi
+    sleep 1
+  done
 }
 
 start_cron() {
-  # 优化nice命令检查
-  local nice_cmd=""
-  if command -v nice &> /dev/null; then
-    nice_cmd="nice -n -10"
-  fi
-  
-  # 启动crond
-  $nice_cmd busybox crond -c $backup_dir
-  sleep 2
+  busybox crond -c "$backup_dir"
+  sleep 1
 
   # 获取进程ID
-  local cron_pid=$(get_cron_pid)
-  
+  local all_cron_pids
+  all_cron_pids="$(get_cron_pid)"
+  local cron_pid
+  cron_pid="$(printf '%s\n' "$all_cron_pids" | awk 'NF {print $1; exit}')"
+
   logd_clear
 
   # 检查 inotifyd 功能，功能启动在 start.sh
@@ -61,9 +127,9 @@ start_cron() {
     logd "如需关闭此功能，在 ${backup_dir} 中新建一个 onlycrond 文件，重启生效"
   fi
 
-  if [[ -n $cron_pid ]]; then
-    local crond_root_file=$backup_dir/root
-    echo $cron_pid > $backup_dir/cron_pid
+  if [[ -n "$cron_pid" ]]; then
+    local crond_root_file="$backup_dir/root"
+    printf '%s\n' "$all_cron_pids" > "$backup_dir/cron_pid"
     # 启用唤醒锁
     enable_wakelock
     update_module_description "😍 service (pid:$cron_pid) is running !!!"
@@ -76,33 +142,45 @@ start_cron() {
     logd "未检测到 cron 任务，需要修改配置文件后，手动运行一遍 ${start_jobs_path}/Run_cron.sh"
     # 如果启动失败，释放唤醒锁
     disable_wakelock
-    exit 1
+    return 1
   fi
 }
 
 stop_cron() {
   # 获取所有需要停止的进程ID
-  local pids=$(get_cron_pid)
-  
-  # 批量停止进程
+  local pids
+  pids="$(get_cron_pid)"
+  local pid=""
+
+  # 先尝试温和停止
   if [[ -n "$pids" ]]; then
     for pid in $pids; do
       kill -15 "$pid" 2>/dev/null
     done
+
+    for pid in $pids; do
+      wait_pid_exit "$pid"
+    done
   fi
-  
+
   # 释放唤醒锁
   disable_wakelock
-  
+
   # 清理文件
-  rm -f $backup_dir/cron_pid
+  rm -f "$backup_dir/cron_pid"
   update_module_description "❌ service is not running !!!"
+}
+
+start_service() {
+  if [[ -n "$(get_cron_pid)" ]]; then
+    stop_cron >> /dev/null 2>&1
+  fi
+  start_cron
 }
 
 case "$1" in
   start)
-    stop_cron >> /dev/null 2>&1
-    start_cron
+    start_service
     ;;
   stop)
     stop_cron
