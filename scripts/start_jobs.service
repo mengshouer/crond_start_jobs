@@ -54,28 +54,28 @@ get_cron_pid() {
 
 # 唤醒锁控制函数
 enable_wakelock() {
+  local write_rc=0
+
   if [[ -f "${backup_dir}/nowakelock" ]]; then
     return 0
   fi
 
-  if ! printf '%s\n' "$WAKELOCK_NAME" > /sys/power/wake_lock 2>/dev/null; then
-    logd "wakelock 写入失败，当前系统休眠后可能无法准时执行任务"
-    return 1
-  fi
-
-  if ! grep -qw "$WAKELOCK_NAME" /sys/power/wake_lock 2>/dev/null; then
-    logd "wakelock 写入未生效，当前系统可能不支持 /sys/power/wake_lock 持锁，休眠后可能无法准时执行任务"
-    return 1
-  fi
-
+  printf '%s\n' "$WAKELOCK_NAME" > /sys/power/wake_lock 2>/dev/null
+  write_rc=$?
   sleep 1
+
   if grep -qw "$WAKELOCK_NAME" /sys/power/wake_lock 2>/dev/null; then
     logd "已启用 wakelock: $WAKELOCK_NAME，防止任务在设备休眠后无法准时执行"
     logd "如需关闭唤醒锁功能，在 ${backup_dir} 中新建一个 nowakelock 文件"
     return 0
   fi
 
-  logd "wakelock 无法持续保持，当前系统可能会立即释放 /sys/power/wake_lock，休眠后可能无法准时执行任务"
+  if grep -qw "$WAKELOCK_NAME" /sys/power/wake_unlock 2>/dev/null; then
+    logd "wakelock 已写入但未保持 active，当前系统可能不支持 /sys/power/wake_lock 持锁，休眠后可能无法准时执行任务 (rc=$write_rc)"
+    return 1
+  fi
+
+  logd "wakelock 写入失败，当前系统休眠后可能无法准时执行任务 (rc=$write_rc)"
   return 1
 }
 

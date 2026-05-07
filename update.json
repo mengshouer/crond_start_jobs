@@ -1,6 +1,6 @@
 {
-  "version": "v1.2.4",
-  "versionCode": 20260507,
+  "version": "v1.2.5",
+  "versionCode": 2026050701,
   "zipUrl": "https://github.com/mengshouer/crond_start_jobs/raw/refs/heads/release/crond_start_jobs.zip",
   "changelog": "https://github.com/mengshouer/crond_start_jobs/raw/refs/heads/main/CHANGELOG.md"
 }
